@@ -1,0 +1,101 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+}
+
+base {
+    archivesName = rootProject.mod_id
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(rootProject.java_version as int)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = rootProject.java_version as int
+}
+
+loom {
+    runs {
+        client {
+            client()
+            ideConfigGenerated true
+            runDir 'run'
+        }
+    }
+}
+
+// The test worker and runClient are the two JVMs that load onnxruntime.dll, and ORT
+// binds the host JVM's bundled msvcp140 at startup - corretto-21.0.4 ships 14.29 and
+// EXCEPTION_ACCESS_VIOLATIONs inside ORT 1.31. Pin both to the Temurin install
+// (msvcp140 14.40); vendor-filtered so a wrong pick fails loudly instead of crashing.
+def pocJvm = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(rootProject.java_version as int)
+    vendor = JvmVendorSpec.ADOPTIUM
+}
+
+tasks.withType(Test).configureEach {
+    javaLauncher = pocJvm
+}
+
+tasks.matching { it.name == 'runClient' }.configureEach {
+    javaLauncher = pocJvm
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    // Official Mojang mappings: 1.21.11 is the last obfuscated
+    // release and yarn is frozen there.
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_version}"
+    // Fat jar: the whole API rides along as a nested jar, so the one remapJar output
+    // drops into a stock launcher's mods folder (fabric loader only) - nothing else
+    // to install by hand.
+    include "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_version}"
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+processResources {
+    // The native artifacts and the model ride inside the jar when present - the
+    // distribution shape, where a stock launcher has no repo sitting next to the game
+    // (CrystalNetBridge extracts them on first use). A bare clone has none of them
+    // (they are built and exported, not committed): the jar then ships without native
+    // support and the bridge names the missing piece at toggle-on.
+    [['../native/build/bin/crystalnet.dll'          : 'native'],
+     ['../native/third_party/onnxruntime/lib/onnxruntime.dll': 'native'],
+     ['../ml/runs/w24v2gpu/model.onnx'              : 'model']].each { e ->
+        def f = file(e.keySet().iterator().next())
+        if (f.isFile()) {
+            from(f) { into e.values().iterator().next() }
+        }
+    }
+
+    inputs.property 'version', project.version
+    inputs.property 'mod_id', rootProject.mod_id
+    inputs.property 'minecraft_version', rootProject.minecraft_version
+    inputs.property 'loader_version', rootProject.loader_version
+
+    filesMatching('fabric.mod.json') {
+        expand(
+                version: project.version,
+                mod_id: rootProject.mod_id,
+                minecraft_version: rootProject.minecraft_version,
+                loader_version: rootProject.loader_version
+        )
+    }
+}

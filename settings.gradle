@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    // Auto-provision the toolchain JVM: :pocmod pins the test/runClient launcher to
+    // Temurin 21 (the embedded onnxruntime.dll binds the JVM's bundled msvcp140 -
+    // see gradle.properties), and foojay downloads it when no install is detected.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'fcrystalnet'
+
+// :pocmod - standalone fabric prototype: minimal perception + crystalnet.dll (JNI +
+//           embedded ONNX Runtime) inference + real place/break + live-regret log.
+//           The physics layer (vanilla-exact explosion damage + crystal placement
+//           enumeration + the snapshot types every stage exchanges) is not a separate
+//           Gradle module; it lives in this module's source tree at
+//           com/github/luiox/fcrystalnet/core.
+include 'pocmod'

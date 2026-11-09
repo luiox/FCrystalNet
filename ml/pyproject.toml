@@ -1,0 +1,28 @@
+[project]
+name = "fcrystalnet-ml"
+version = "0.1.0"
+description = "Crystal placement+break supervised training on teacher-labelled .ncds frames"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "torch==2.11.0+cu128",
+  "numpy>=2",
+]
+
+[dependency-groups]
+# Inference stack for eval.py / deploy.py on non-GPU machines; training machines can
+# skip it: uv sync --group deploy installs it.
+deploy = ["onnx", "onnxruntime"]
+
+[tool.uv]
+package = false
+
+# PyPI's Windows torch build is CPU-only - the cu128 wheels come from the official
+# PyTorch index (explicit, so only torch resolves from it; everything else comes
+# from PyPI), the uv-documented pattern.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }

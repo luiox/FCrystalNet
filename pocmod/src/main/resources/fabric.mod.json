@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "FCrystalNet POC",
+  "description": "Crystal placement+break POC: model-driven decisions via crystalnet.dll (JNI + embedded ONNX Runtime), exact-search live-regret log, fake players for testing.",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.github.luiox.fcrystalnet.poc.FcPocClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

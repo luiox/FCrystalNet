@@ -1,0 +1,31 @@
+# gradle
+build
+.gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+# idea / eclipse
+out
+*.ipr
+*.iws
+*.iml
+.idea
+.classpath
+.project
+.settings
+
+# ml dataset / training artifacts (regenerable: datagen + train.py)
+ml/.venv/
+ml/data/
+ml/runs/
+ml/__pycache__/
+*.ncds
+
+# native: ORT runtime is a downloaded release (README has the step), zip is the cache
+native/build/
+native/third_party/onnxruntime/lib/
+native/third_party/onnxruntime/download/
+native/compile_commands.json
+
+# pocmod runtime
+pocmod/run/
+native/.xmake/
